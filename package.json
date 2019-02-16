@@ -1,0 +1,47 @@
+{
+  "name": "xstate-editor",
+  "scripts": {
+    "dev": "parcel index.html",
+    "dist": "trash dist && npm run prettier-production && parcel build index.html",
+    "prettier": "prettier --write *.{html,md,ts,tsx}",
+    "prettier-production": "prettier --check *.{html,md,ts,tsx}",
+    "test": "jest"
+  },
+  "jest": {
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "*.ts"
+    ],
+    "coverageDirectory": "coverage",
+    "globals": {
+      "ts-jest": {
+        "tsConfig": "tsconfig.json"
+      }
+    },
+    "moduleFileExtensions": [
+      "js",
+      "ts"
+    ],
+    "testEnvironment": "node",
+    "testRegex": ".test.ts$",
+    "transform": {
+      ".ts$": "ts-jest"
+    }
+  },
+  "devDependencies": {
+    "@types/jest": "^23.3.9",
+    "@types/react": "^16.8.3",
+    "@types/react-dom": "^16.8.1",
+    "jest": "^23.6.0",
+    "parcel-bundler": "^1.11.0",
+    "prettier": "^1.16.4",
+    "trash-cli": "^1.4.0",
+    "ts-jest": "^23.10.5",
+    "typescript": "^3.3.3"
+  },
+  "dependencies": {
+    "react": "^16.8.2",
+    "react-dom": "^16.8.2",
+    "xstate": "^4.1.2"
+  }
+}
