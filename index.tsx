@@ -1,9 +1,8 @@
 import * as React from 'react';
 import { render } from 'react-dom';
-import { State } from 'xstate';
+import { interpret } from 'xstate';
 
-import { createEditorMachine, EditorEvent, EditorContext } from './statechart';
-import { createInterpreter, Interpreter } from './interpreter';
+import { createEditorMachine } from './statechart';
 
 type Content = string;
 
@@ -31,20 +30,7 @@ class Editor extends React.Component<
     },
     onResetEditor: () => {},
   });
-  private interpreter: Interpreter<
-    EditorContext<Content>,
-    EditorEvent<Content>
-  > = createInterpreter(
-    this.machine,
-    nextState => {
-      this.editorState = nextState;
-    },
-    { debug: true },
-  );
-  private editorState: State<
-    EditorContext<Content>,
-    EditorEvent<Content>
-  > = this.machine.initialState;
+  private interpreter = interpret(this.machine);
 
   constructor(props) {
     super(props);
@@ -69,7 +55,7 @@ class Editor extends React.Component<
               <input
                 type="text"
                 onChange={event =>
-                  this.interpreter.send(this.editorState, {
+                  this.interpreter.send({
                     type: 'CONTENT_UPDATED',
                     content: event.target.value,
                   })
@@ -87,7 +73,7 @@ class Editor extends React.Component<
               <button
                 type="button"
                 onClick={() =>
-                  this.interpreter.send(this.editorState, {
+                  this.interpreter.send({
                     type: 'LOCAL_LOCK_RELEASED',
                   })
                 }
@@ -97,7 +83,7 @@ class Editor extends React.Component<
               <button
                 type="button"
                 onClick={() =>
-                  this.interpreter.send(this.editorState, {
+                  this.interpreter.send({
                     type: 'FOREIGN_LOCK_ADDED',
                   })
                 }
@@ -107,7 +93,7 @@ class Editor extends React.Component<
               <button
                 type="button"
                 onClick={() =>
-                  this.interpreter.send(this.editorState, {
+                  this.interpreter.send({
                     type: 'FOREIGN_LOCK_RELEASED',
                   })
                 }
@@ -122,7 +108,7 @@ class Editor extends React.Component<
               <button
                 type="button"
                 onClick={() =>
-                  this.interpreter.send(this.editorState, {
+                  this.interpreter.send({
                     type: 'ACCESS_DENIED',
                   })
                 }
@@ -132,7 +118,7 @@ class Editor extends React.Component<
               <button
                 type="button"
                 onClick={() =>
-                  this.interpreter.send(this.editorState, {
+                  this.interpreter.send({
                     type: 'ACCESS_GRANTED',
                   })
                 }
