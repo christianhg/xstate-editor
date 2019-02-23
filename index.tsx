@@ -13,6 +13,9 @@ class Editor extends React.Component<
   private machine = createEditorMachine<Content>({
     contentIsDirty: (previousContent, currentContent) =>
       previousContent !== currentContent,
+    onActive: () => {
+      console.log('active');
+    },
     onContentDirty: content => {
       this.setState({
         content,
@@ -23,12 +26,20 @@ class Editor extends React.Component<
         isEditable: true,
       });
     },
+    onIdle: () => {
+      console.log('idle');
+    },
     onUneditable: () => {
       this.setState({
         isEditable: false,
       });
     },
-    onResetEditor: () => {},
+    onResetEditor: () => {
+      this.setState({
+        content: '',
+      });
+    },
+    TIME_BEFORE_IDLE: 500,
   });
   private interpreter = interpret(this.machine);
 

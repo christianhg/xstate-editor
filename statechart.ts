@@ -1,11 +1,21 @@
-import { Machine, StateSchema } from 'xstate';
+import { Machine, StateSchema, assign } from 'xstate';
 
 export interface EditorStateSchema extends StateSchema {
   states: {
     editable: {
       states: {
-        pristine: {};
-        dirty: {};
+        pristine: {
+          states: {
+            active: {};
+            idle: {};
+          };
+        };
+        dirty: {
+          states: {
+            active: {};
+            idle: {};
+          };
+        };
       };
     };
     uneditable: {
@@ -54,22 +64,31 @@ interface EditorMachineConfig<Content> {
     previousContent: Content,
     currentContent: Content,
   ) => boolean;
+  onActive: () => void;
   onContentDirty: (state: Content) => void;
   onEditable: () => void;
+  onIdle: () => void;
   onResetEditor: () => void;
   onUneditable: () => void;
+  TIME_BEFORE_IDLE: number;
 }
 
 export const createEditorMachine = <Content>({
   contentIsDirty,
+  onActive,
   onContentDirty,
   onEditable,
+  onIdle,
   onResetEditor,
   onUneditable,
+  TIME_BEFORE_IDLE,
 }: EditorMachineConfig<Content>) =>
   Machine<EditorContext<Content>, EditorStateSchema, EditorEvent<Content>>(
     {
       id: 'editor',
+      context: {
+        content: undefined,
+      },
       initial: 'editable',
       states: {
         editable: {
@@ -85,11 +104,33 @@ export const createEditorMachine = <Content>({
           },
           states: {
             pristine: {
-              onEntry: ['notifyResetEditor'],
+              onEntry: ['resetContent', 'notifyResetEditor'],
               on: {
-                CONTENT_UPDATED: {
-                  target: 'dirty',
-                  cond: 'contentIsDirty',
+                CONTENT_UPDATED: [
+                  {
+                    target: 'dirty',
+                    cond: 'contentIsDirty',
+                    actions: ['updateContent'],
+                  },
+                  {
+                    target: 'pristine',
+                    actions: ['updateContent'],
+                    internal: true,
+                  },
+                ],
+              },
+              initial: 'active',
+              states: {
+                active: {
+                  onEntry: ['notifyActive'],
+                  after: {
+                    [TIME_BEFORE_IDLE]: {
+                      target: 'idle',
+                    },
+                  },
+                },
+                idle: {
+                  onEntry: ['notifyIdle'],
                 },
               },
             },
@@ -97,10 +138,25 @@ export const createEditorMachine = <Content>({
               onEntry: ['notifyContentDirty'],
               on: {
                 LOCAL_LOCK_RELEASED: {
-                  target: 'pristine',
+                  target: '#editor.editable',
                 },
                 CONTENT_UPDATED: {
-                  actions: ['notifyContentDirty'],
+                  target: 'dirty',
+                  actions: ['updateContent'],
+                },
+              },
+              initial: 'active',
+              states: {
+                active: {
+                  onEntry: ['notifyActive'],
+                  after: {
+                    [TIME_BEFORE_IDLE]: {
+                      target: 'idle',
+                    },
+                  },
+                },
+                idle: {
+                  onEntry: ['notifyIdle'],
                 },
               },
             },
@@ -166,10 +222,21 @@ export const createEditorMachine = <Content>({
     },
     {
       actions: {
+        resetContent: assign({
+          content: (ctx, event: ContentEvent<Content>) => undefined,
+        }),
+        updateContent: assign({
+          content: (ctx, event: ContentEvent<Content>) => {
+            console.log(event);
+            return event.content;
+          },
+        }),
         notifyContentDirty: (ctx, { content }: ContentEvent<Content>) => {
           onContentDirty(content);
         },
+        notifyActive: onActive,
         notifyEditable: onEditable,
+        notifyIdle: onIdle,
         notifyResetEditor: onResetEditor,
         notifyUneditable: onUneditable,
       },

@@ -6,11 +6,14 @@ interface ExampleContent {
 }
 
 const editorMachine = createEditorMachine<ExampleContent>({
-  contentIsDirty: content => content.dirty,
+  contentIsDirty: (_, content) => content.dirty,
+  onActive: () => {},
   onContentDirty: () => {},
   onEditable: () => {},
+  onIdle: () => {},
   onResetEditor: () => {},
   onUneditable: () => {},
+  TIME_BEFORE_IDLE: 500,
 });
 
 test('notifies of being editable when access is granted', () => {
