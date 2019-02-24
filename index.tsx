@@ -43,7 +43,7 @@ class Editor extends React.Component<
   });
   private interpreter = interpret(this.machine);
 
-  constructor(props) {
+  constructor(props: {}) {
     super(props);
     this.state = {
       content: '',

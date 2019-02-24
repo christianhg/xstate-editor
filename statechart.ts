@@ -61,7 +61,7 @@ export type EditorEvent<Content> =
 
 interface EditorMachineConfig<Content> {
   contentIsDirty: (
-    previousContent: Content,
+    previousContent: Content | undefined,
     currentContent: Content,
   ) => boolean;
   onActive: () => void;
@@ -83,7 +83,11 @@ export const createEditorMachine = <Content>({
   onUneditable,
   TIME_BEFORE_IDLE,
 }: EditorMachineConfig<Content>) =>
-  Machine<EditorContext<Content>, EditorStateSchema, EditorEvent<Content>>(
+  Machine<
+    EditorContext<Content | undefined>,
+    EditorStateSchema,
+    EditorEvent<Content>
+  >(
     {
       id: 'editor',
       context: {
@@ -222,16 +226,10 @@ export const createEditorMachine = <Content>({
     },
     {
       actions: {
-        resetContent: assign({
-          content: (ctx, event: ContentEvent<Content>) => undefined,
-        }),
-        updateContent: assign({
-          content: (ctx, event: ContentEvent<Content>) => {
-            console.log(event);
-            return event.content;
-          },
-        }),
-        notifyContentDirty: (ctx, { content }: ContentEvent<Content>) => {
+        resetContent: createResetContent(),
+        updateContent: createUpdateContent(),
+        notifyContentDirty: (ctx, event) => {
+          const { content } = event as ContentEvent<Content>;
           onContentDirty(content);
         },
         notifyActive: onActive,
@@ -241,8 +239,22 @@ export const createEditorMachine = <Content>({
         notifyUneditable: onUneditable,
       },
       guards: {
-        contentIsDirty: (ctx, { content }: ContentEvent<Content>) =>
-          contentIsDirty(ctx.content, content),
+        contentIsDirty: (ctx, event) => {
+          const { content } = event as ContentEvent<Content>;
+          return contentIsDirty(ctx.content, content);
+        },
       },
     },
   );
+
+function createUpdateContent<Content>() {
+  return assign<EditorContext<Content | undefined>, ContentEvent<Content>>({
+    content: (ctx, event) => event.content,
+  });
+}
+
+function createResetContent<Content>() {
+  return assign<EditorContext<Content | undefined>, ContentEvent<Content>>({
+    content: () => undefined,
+  });
+}
